@@ -4,12 +4,12 @@
         <card>
             <front>Hello</front>
             <back>Hola</back>
-            <audio>audio/hello.mp3</audio>
+            <audio>hello.mp3</audio>
         </card>
         <card>
             <front>Goodbye</front>
             <back>Adiós</back>
-            <audio>audio/goodbye.mp3</audio>
+            <audio>goodbye.mp3</audio>
         </card>
     </lesson>
     
@@ -17,12 +17,12 @@
         <card>
             <front>One</front>
             <back>Uno</back>
-            <audio>audio/one.mp3</audio>
+            <audio>one.mp3</audio>
         </card>
         <card>
             <front>Two</front>
             <back>Dos</back>
-            <audio>audio/two.mp3</audio>
+            <audio>two.mp3</audio>
         </card>
     </lesson>
 </lessons>
