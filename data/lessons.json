@@ -1,0 +1,16 @@
+[
+    {
+      "lesson": "Lesson 1",
+      "flashcards": [
+        { "word": "Apple", "meaning": "A fruit" },
+        { "word": "Banana", "meaning": "A yellow fruit" }
+      ]
+    },
+    {
+      "lesson": "Lesson 2",
+      "flashcards": [
+        { "word": "Dog", "meaning": "A domestic animal" },
+        { "word": "Cat", "meaning": "A small pet animal" }
+      ]
+    }
+  ]
