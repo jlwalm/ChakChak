@@ -13,4 +13,12 @@
         { "word": "Cat", "meaning": "пишак" }
       ]
     }
+
+    {
+      "lesson": "Lesson 3",
+      "flashcards": [
+        { "word": "Dog", "meaning": "саг" },
+        { "word": "Cat", "meaning": "пишак" }
+      ]
+    }
   ]
