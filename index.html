@@ -324,7 +324,7 @@
             window.speechSynthesis.cancel(); 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-GB';
-            utterance.rate = 0.9;
+            utterance.rate = 0.6;
             window.speechSynthesis.speak(utterance);
         } else {
             console.warn('Text-to-Speech is not supported in this browser.');
