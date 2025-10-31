@@ -335,7 +335,7 @@
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(message);
-            utterance.rate = 1.2; // Faster speech for appraisal
+            utterance.rate = 0.8; // Faster speech for appraisal
             utterance.pitch = 1.2; // Higher pitch
             utterance.volume = 0.8;
             window.speechSynthesis.speak(utterance);
