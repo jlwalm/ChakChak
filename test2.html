@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Progress Viewer (Enhanced)</title>
+    <style>
+        /* --- GLOBAL STYLES & RESET --- */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+            background-color: #f8fafc;
+            color: #1f2937;
+        }
+        #app {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 650px; 
+            text-align: center;
+            position: relative;
+        }
+
+        /* --- STICKY HEADER & CONTROLS --- */
+        #header-controls {
+            position: sticky;
+            top: 0;
+            z-index: 20; /* High Z-index */
+            background: white; /* Ensure background is opaque */
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            padding-top: 15px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        h1 {
+            color: #007bff;
+            font-size: 2em;
+            margin: 0;
+            font-weight: 800;
+        }
+        #status {
+            font-size: 0.9em;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+
+        /* --- BUTTON GROUP --- */
+        #mode-and-refresh {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        #mode-and-refresh button, #mode-and-refresh label {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #refresh-button {
+            background-color: #f3f4f6;
+            color: #3b82f6;
+            border: 1px solid #d1d5db;
+        }
+        #refresh-button:hover {
+            background-color: #e5e7eb;
+        }
+        
+        /* QUIZ MODE TOGGLE STYLING */
+        #quiz-mode-label {
+            background-color: #ffcc00; /* Yellow for attention */
+            color: #1f2937;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #quiz-mode-toggle {
+            transform: scale(1.2); /* Make the checkbox bigger */
+        }
+        .quiz-active {
+            box-shadow: 0 0 0 3px #ffcc00; /* Subtle glowing effect */
+        }
+
+        /* --- LESSON & CARD CONTAINER --- */
+        .lesson-group {
+            margin-top: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .lesson-group-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #3b82f6;
+            margin-bottom: 20px;
+            text-align: left;
+            padding-left: 5px;
+        }
+        #lesson-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px; 
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* --- FLIP CARD STRUCTURE --- */
+        .flip-card {
+            width: 100%;
+            height: 180px; 
+            perspective: 1200px; 
+            border-radius: 12px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s ease-in-out;
+            transform-style: preserve-3d;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+        }
+
+        .card-item.is-flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        .flip-card-front {
+            background-color: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            padding-bottom: 55px; /* Space for progress bar and controls */
+        }
+
+        .flip-card-back {
+            background: linear-gradient(45deg, #00bcd4, #007bff);
+            color: white;
+            transform: rotateY(180deg);
+            padding-bottom: 20px;
+        }
+
+        /* --- LEARNED STATE STYLING --- */
+        .card-item.is-learned .flip-card-front {
+            background-color: #ecfdf5;
+            border: 2px solid #10b981;
+        }
+        /* No harsh line-through, use badge instead */
+        .card-item.is-learned .word-display {
+            color: #047857; 
+            opacity: 1;
+        }
+        .card-item.is-learned .word-display::after {
+            content: ' ✓'; 
+            color: #10b981;
+            font-size: 0.8em;
+            margin-left: 5px;
+            font-weight: 800;
+        }
+
+        /* --- CARD CONTENT & PROGRESS --- */
+        .context-hint { 
+            font-size: 0.85em;
+            color: #6b7280;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+
+        .word-display {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: #1f2937; 
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .definition-text {
+            font-size: 1.1em;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 0;
+            color: white;
+            flex-grow: 1; 
+            display: flex;
+            align-items: center;
+        }
+
+        .card-progress {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            width: calc(100% - 75px); 
+            text-align: left;
+        }
+
+        .progress-status {
+            font-size: 0.75em;
+            color: #9ca3af;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease-out;
+        }
+        
+        .card-item.is-learned .progress-bar-fill {
+            background-color: #10b981;
+        }
+
+        /* --- CARD CONTROLS (Audio & SRS) --- */
+        .card-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: flex-end; 
+            z-index: 10; 
+        }
+        
+        .audio-button {
+            border: none;
+            border-radius: 50%; 
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            height: 45px; 
+            width: 45px; 
+            background-color: #10b981;
+            color: white;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .audio-button:hover { 
+            background-color: #049568; 
+            transform: translateY(-1px); 
+        }
+
+        /* SRS Buttons (Hidden by default, shown when flipped in Quiz Mode) */
+        .srs-actions {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            display: none;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            background: linear-gradient(135deg, #007bff, #00bcd4);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .srs-actions.is-active {
+            display: flex;
+            transform: translateZ(180deg) rotateY(-180deg); /* Counter-rotate to face viewer */
+        }
+        
+        .srs-actions button {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .srs-actions button:hover {
+            opacity: 0.8;
+        }
+
+        .srs-hard { background-color: #ef4444; } /* Red */
+        .srs-good { background-color: #f59e0b; } /* Yellow/Orange */
+        .srs-easy { background-color: #10b981; } /* Green */
+
+        /* Hide audio button when SRS is active to clean up the back of the card */
+        .card-item.is-flipped .audio-button {
+            display: none;
+        }
+        
+        /* --- CSS CONFETTI ANIMATION (The Pro Move) --- */
+        @keyframes fall {
+            0% { transform: translate3d(0, -100px, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate3d(var(--x-end), var(--y-end), 0) rotate(var(--r-end)); opacity: 0; }
+        }
+        .confetti-particle {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            animation: fall var(--duration) linear forwards;
+            /* Optional: Add a smooth rotation for extra effect, but simple fall is fast */
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="header-controls">
+        <h1>Чакчак Англисӣ</h1>
+        <div id="mode-and-refresh">
+            <label id="quiz-mode-label" for="quiz-mode-toggle">
+                <input type="checkbox" id="quiz-mode-toggle">
+                Quiz Mode (Active Recall)
+            </label>
+            <button id="refresh-button" title="Reload data from Google Sheet">↻</button>
+        </div>
+        <input type="search" id="search-input" placeholder="Filter cards by word, context, or definition...">
+        <div id="status">Loading data...</div>
+    </div>
+    
+    <div id="lesson-view-container">
+        </div>
+</div>
+
+<script>
+    // --- Configuration ---
+    const STORAGE_KEY = 'flashcard_view_counts_srs'; 
+    const DATA_URL = 'https://script.google.com/macros/s/AKfycbzNT5IjZqTCH8hIUdtNHxJIhELFvjDMpop7LIgI6Ub9kV09RYKhtEYdlIRVnPEye2gN/exec'; 
+    const MAX_VIEWS = 100;
+    const QUIZ_MODE_CLASS = 'quiz-active';
+
+    let words = [];
+    let viewCounts = {}; // Stores { wordKey: { count: N, nextReview: timestamp/null } }
+    let isQuizMode = false;
+
+    // --- Utility Functions ---
+
+    /**
+     * Finds the parent card element for cleaner event delegation.
+     * @param {HTMLElement} element - The clicked element.
+     * @returns {HTMLElement|null} The card item.
+     */
+    function getCardItem(element) {
+        return element.closest('.card-item');
+    }
+
+    // --- Storage Functions ---
+
+    function loadViewCounts() {
+        const storedCounts = localStorage.getItem(STORAGE_KEY);
+        if (storedCounts) {
+            try {
+                viewCounts = JSON.parse(storedCounts);
+            } catch (e) {
+                console.error("Failed to parse view counts from localStorage:", e);
+                viewCounts = {};
+            }
+        }
+    }
+
+    function saveViewCounts() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(viewCounts));
+    }
+
+
+    // --- TTS & Rewards Function ---
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-GB';
+            utterance.rate = 0.6;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn('Text-to-Speech is not supported.');
+        }
+    }
+
+    function speakReward(message) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 0.8;
+            utterance.pitch = 1.2;
+            utterance.volume = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // --- Confetti Effect (CSS Animation) ---
+
+    function launchConfetti(originElement) {
+        const particleCount = 40;
+        const colors = ["#ffc700", "#ff0000", "#2e4a6e", "#00d4ff", "#10b981", "#ff69b4"];
+        const container = document.body;
+        
+        // Get the position of the card to launch confetti from its center
+        const rect = originElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.className = 'confetti-particle';
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Randomize size and shape
+            const size = Math.random() * 8 + 4;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            
+            // Set initial position (fixed to viewport)
+            p.style.left = `${centerX + (Math.random() - 0.5) * 50}px`;
+            p.style.top = `${centerY + (Math.random() - 0.5) * 50}px`;
+
+            // Define CSS variables for the animation
+            p.style.setProperty('--duration', `${Math.random() * 1.5 + 1.5}s`); // 1.5s to 3.0s
+            p.style.setProperty('--x-end', `${(Math.random() - 0.5) * 600}px`); // Spread out horizontally
+            p.style.setProperty('--y-end', `${window.innerHeight - centerY + 100}px`); // Fall off screen
+            p.style.setProperty('--r-end', `${(Math.random() * 1000) * (Math.random() > 0.5 ? 1 : -1)}deg`); // Random rotation
+            p.style.animationDelay = `${Math.random() * 0.5}s`; // Stagger start
+
+            container.appendChild(p);
+            
+            // Remove the particle after its animation is done
+            setTimeout(() => {
+                p.remove();
+            }, (parseFloat(p.style.getPropertyValue('--duration')) * 1000) + (parseFloat(p.style.animationDelay) * 1000) + 100);
+        }
+    }
+
+    // --- Core Logic ---
+    
+    /**
+     * Handles the logic for a user actively assessing a card (SRS action).
+     * @param {HTMLElement} cardItem - The element of the card being updated.
+     * @param {number} points - The points to add to the view count (5, 3, or 1).
+     * @param {string} difficulty - The difficulty string (Hard, Good, Easy).
+     */
+    function handleSrsAction(cardItem, points, difficulty) {
+        const wordKey = cardItem.getAttribute('data-word');
+        
+        // 1. Update View Count
+        const currentData = viewCounts[wordKey] || { count: 0, nextReview: null };
+        currentData.count = Math.min(MAX_VIEWS, currentData.count + points);
+        viewCounts[wordKey] = currentData;
+        saveViewCounts();
+
+        // 2. Update DOM
+        const progressDisplay = cardItem.querySelector('.progress-status');
+        const progressBarFill = cardItem.querySelector('.progress-bar-fill');
+        const progressPercent = Math.min(100, Math.round((currentData.count / MAX_VIEWS) * 100));
+
+        if (progressDisplay) {
+            progressDisplay.textContent = `Views: ${currentData.count}/${MAX_VIEWS} (${difficulty})`;
+        }
+        if (progressBarFill) {
+            progressBarFill.style.width = `${progressPercent}%;`;
+        }
+
+        // 3. Handle Learned State & Rewards
+        if (currentData.count >= MAX_VIEWS) {
+            cardItem.classList.add('is-learned');
+            speakReward("Excellent! Word mastered!");
+            launchConfetti(cardItem.querySelector('.flip-card-inner'));
+        } else if (currentData.count > 0 && currentData.count % 10 === 0) {
+            launchConfetti(cardItem.querySelector('.flip-card-inner'));
+        }
+
+        // 4. Flip card back to the front to prompt next review (Quiz Mode only)
+        if (isQuizMode) {
+            cardItem.classList.remove('is-flipped');
+            cardItem.querySelector('.srs-actions').classList.remove('is-active');
+        }
+    }
+
+    function handleFlipToggle(e) {
+        const cardItem = getCardItem(e.currentTarget);
+        if (!cardItem) return;
+
+        // Cancel any ongoing speech
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+        }
+
+        const isFlippingToBack = !cardItem.classList.contains('is-flipped');
+        
+        if (isFlippingToBack) {
+            cardItem.classList.add('is-flipped');
+            
+            // In Quiz Mode, enable SRS buttons
+            if (isQuizMode) {
+                cardItem.querySelector('.srs-actions').classList.add('is-active');
+            } else {
+                // In passive mode, just increment the view count by 1 (simulating a 'good' review)
+                const wordKey = cardItem.getAttribute('data-word');
+                const currentData = viewCounts[wordKey] || { count: 0, nextReview: null };
+                
+                // Only count the flip if it's the first time in this toggle
+                if (!cardItem.hasAttribute('data-flip-counted')) {
+                    handleSrsAction(cardItem, 1, 'Passive');
+                    cardItem.setAttribute('data-flip-counted', 'true');
+                }
+            }
+        } else {
+            // Flipping back to front: remove markers
+            cardItem.classList.remove('is-flipped');
+            cardItem.removeAttribute('data-flip-counted');
+            if (isQuizMode) {
+                cardItem.querySelector('.srs-actions').classList.remove('is-active');
+            }
+        }
+    }
+    
+    function groupWordsByLesson(wordList) {
+        const grouped = {};
+        wordList.forEach(wordObj => {
+            const lesson = wordObj.lesson || 'Unsorted Words'; 
+            if (!grouped[lesson]) {
+                grouped[lesson] = [];
+            }
+            grouped[lesson].push(wordObj);
+        });
+        return grouped;
+    }
+
+    function renderLessonView(groupedWords) {
+        const container = document.getElementById('lesson-view-container');
+        container.innerHTML = '';
+
+        for (const lesson in groupedWords) {
+            const lessonGroupDiv = document.createElement('div');
+            lessonGroupDiv.className = 'lesson-group';
+            
+            const title = document.createElement('h2');
+            title.className = 'lesson-group-title';
+            title.textContent = lesson;
+            lessonGroupDiv.appendChild(title);
+            
+            const cardGrid = document.createElement('ul');
+            cardGrid.id = 'lesson-content';
+            
+            groupedWords[lesson].forEach(wordObj => {
+                const wordKey = wordObj.word;
+                const currentData = viewCounts[wordKey] || { count: 0, nextReview: null };
+                const currentViewCount = currentData.count;
+
+                const progressPercent = Math.min(100, Math.round((currentViewCount / MAX_VIEWS) * 100));
+                
+                const cardItem = document.createElement('li');
+                cardItem.className = 'card-item'; 
+                cardItem.setAttribute('data-word', wordKey);
+                
+                if (currentViewCount >= MAX_VIEWS) {
+                    cardItem.classList.add('is-learned');
+                }
+
+                // Card HTML Structure
+                cardItem.innerHTML = `
+                    <div class="flip-card">
+                        <div class="flip-card-inner">
+                            
+                            <div class="flip-card-front">
+                                <div class="context-hint">${wordObj.context}</div>
+                                <div class="word-display">${wordObj.word}</div>
+                                
+                                <div class="card-progress">
+                                    <div class="progress-status">Views: ${currentViewCount}/${MAX_VIEWS}</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill" style="width: ${progressPercent}%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="card-controls">
+                                    <button class="audio-button" title="Speak Word">▶</button>
+                                </div>
+                            </div>
+
+                            <div class="flip-card-back">
+                                <div class="definition-text">${wordObj.definition}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="srs-actions">
+                        <button class="srs-hard" data-points="1">Hard (1)</button>
+                        <button class="srs-good" data-points="3">Good (3)</button>
+                        <button class="srs-easy" data-points="5">Easy (5)</button>
+                    </div>
+                `;
+                
+                // --- Event Listeners ---
+                
+                // 1. Card Flip/View Toggle (Attached to the inner container for proper event handling)
+                cardItem.querySelector('.flip-card-inner').addEventListener('click', handleFlipToggle);
+                
+                // 2. Audio button click (Must stop propagation)
+                cardItem.querySelector('.audio-button').addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    speak(wordObj.word);
+                });
+                
+                // 3. SRS Action Buttons
+                cardItem.querySelectorAll('.srs-actions button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const points = parseInt(e.target.dataset.points);
+                        const difficulty = e.target.textContent.split(' ')[0];
+                        handleSrsAction(cardItem, points, difficulty);
+                    });
+                });
+
+                cardGrid.appendChild(cardItem);
+            });
+            
+            lessonGroupDiv.appendChild(cardGrid);
+            container.appendChild(lessonGroupDiv);
+        }
+        
+        updateStatusDisplay();
+    }
+    
+    // --- Data Fetching and Initialization ---
+
+    function filterCards(query) {
+        const cards = document.querySelectorAll('.card-item');
+        const lowerCaseQuery = query.toLowerCase();
+
+        cards.forEach(card => {
+            const word = card.getAttribute('data-word').toLowerCase();
+            const context = card.querySelector('.context-hint').textContent.toLowerCase();
+            const definition = card.querySelector('.definition-text').textContent.toLowerCase();
+            
+            const isMatch = word.includes(lowerCaseQuery) || 
+                            context.includes(lowerCaseQuery) || 
+                            definition.includes(lowerCaseQuery);
+
+            card.style.display = isMatch ? 'block' : 'none';
+        });
+
+        // Update status display with filtered count
+        const visibleCards = document.querySelectorAll('.card-item[style*="block"]').length;
+        document.getElementById('status').textContent = `Showing ${visibleCards} of ${words.length} cards.`;
+    }
+
+    async function fetchSheetData() {
+        document.getElementById('status').textContent = 'Fetching flashcard data...';
+        
+        try {
+            const response = await fetch(DATA_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP Error ${response.status}: Failed to load data.`);
+            }
+            
+            const csvText = await response.text();
+            
+            words = csvText.split('\n')
+                .slice(1) 
+                .filter(line => line.trim() !== '')
+                .map(line => {
+                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+                    const clean = (str) => (str ? str.trim().replace(/^"|"$/g, '') : '');
+
+                    const lesson = clean(parts[0]); 
+                    const context = clean(parts[1]);
+                    const word = clean(parts[2]); 
+                    const definition = clean(parts.slice(3).join(',')); 
+                    
+                    return { word: word, definition: definition, lesson: lesson, context: context };
+                })
+                .filter(item => item.word && item.definition); 
+
+            if (words.length > 0) {
+                document.getElementById('status').textContent = `Successfully loaded ${words.length} cards!`;
+            } else {
+                document.getElementById('status').textContent = "Data loaded, but 0 valid flashcards found. Check sheet structure.";
+            }
+
+            initialize(); 
+
+        } catch (error) {
+            console.error('CRITICAL Error fetching or parsing Google Sheet:', error);
+            document.getElementById('status').textContent = `Error loading data: ${error.message}.`;
+        }
+    }
+
+    function updateStatusDisplay() {
+        const totalCards = words.length;
+        const visibleCards = document.querySelectorAll('.card-item').length;
+        document.getElementById('status').textContent = `Total Words Loaded: ${totalCards} | Cards Displayed: ${visibleCards}`;
+    }
+
+    function toggleQuizMode() {
+        isQuizMode = document.getElementById('quiz-mode-toggle').checked;
+        const label = document.getElementById('quiz-mode-label');
+        if (isQuizMode) {
+            label.classList.add(QUIZ_MODE_CLASS);
+            document.getElementById('status').textContent = "Quiz Mode ACTIVE. Use Hard/Good/Easy buttons to progress.";
+        } else {
+            label.classList.remove(QUIZ_MODE_CLASS);
+            document.getElementById('status').textContent = `Passive Viewing Mode. Flip cards to increment view count by 1.`;
+        }
+    }
+
+    function initialize() {
+        loadViewCounts();
+        const groupedWords = groupWordsByLesson(words);
+        renderLessonView(groupedWords);
+
+        // Setup event listeners after rendering
+        document.getElementById('refresh-button').addEventListener('click', () => {
+            words = []; 
+            fetchSheetData();
+        });
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            filterCards(e.target.value);
+        });
+
+        document.getElementById('quiz-mode-toggle').addEventListener('change', toggleQuizMode);
+        toggleQuizMode(); // Initial status setting
+
+        filterCards(''); // Show all cards initially
+    }
+
+    // Start the application
+    fetchSheetData();
+</script>
+</body>
+</html>
