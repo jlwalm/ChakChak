@@ -331,6 +331,7 @@
         }
     }
 
+<<<<<<< HEAD
     function speakReward(message) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -341,6 +342,18 @@
             window.speechSynthesis.speak(utterance);
         }
     }
+=======
+    function speakReward(message) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 1.2; // Faster speech for appraisal
+            utterance.pitch = 1.2; // Higher pitch
+            utterance.volume = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+>>>>>>> parent of 0a0fc15 (Update index.html)
 
     // --- Confetti Effect Function (New) ---
 
