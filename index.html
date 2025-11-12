@@ -1,326 +1,657 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcard Progress Viewer</title>
-    <style>
-        /* Modern Design Reset */
-        body {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px 10px;
-            background-color: #f8fafc; /* Light off-white/blue background */
-            color: #1f2937; /* Dark slate text */
-        }
-        #app {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 650px; 
-            text-align: center;
-            position: relative;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Progress Viewer</title>
+    <style>
+        /* Modern Design Reset */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+            background-color: #f8fafc; /* Light off-white/blue background */
+            color: #1f2937; /* Dark slate text */
+        }
+        #app {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 650px; 
+            text-align: center;
+            position: relative; /* Added for absolute positioning of the refresh button */
+        }
 
-        /* --- Global Status & Header --- */
-        h1 {
-            color: #007bff;
-            font-size: 2em;
-            margin-bottom: 5px;
-            font-weight: 800;
-        }
-        #status {
-            margin-bottom: 25px;
-            font-size: 0.9em;
-            color: #6b7280;
-            font-weight: 500;
-        }
+        /* --- Global Status & Header --- */
+        h1 {
+            color: #007bff;
+            font-size: 2em;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+        #status {
+            margin-bottom: 25px;
+            font-size: 0.9em;
+            color: #6b7280;
+            font-weight: 500;
+        }
 
-        /* --- Refresh Button Styling --- */
-        #refresh-button {
-            position: absolute;
-            top: 25px; 
-            right: 25px; 
-            background-color: #f3f4f6;
-            color: #3b82f6;
-            border: 1px solid #d1d5db;
-            padding: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.2em;
-            font-weight: 600;
-            transition: background-color 0.2s, transform 0.1s;
-            line-height: 1;
-            z-index: 10;
-            display: flex; 
-            align-items: center;
-            justify-content: center;
-        }
-        #refresh-button:hover {
-            background-color: #e5e7eb;
-            transform: translateY(-1px);
-        }
-        /* Mobile adjustment */
-        @media (max-width: 600px) {
-            #refresh-button {
-                padding: 6px;
-                font-size: 1em;
-                top: 15px;
-                right: 15px;
-            }
-        }
+        /* --- Refresh Button Styling --- */
+        #refresh-button {
+            position: absolute;
+            top: 25px; 
+            right: 25px; 
+            background-color: #f3f4f6; /* Light gray background */
+            color: #3b82f6; /* Blue text */
+            border: 1px solid #d1d5db;
+            padding: 8px; /* Adjusted for an icon-only button */
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em; /* Increased size for icon visibility */
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            line-height: 1; /* Ensure vertical alignment is clean */
+            z-index: 10;
+            /* Center the icon */
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+        }
+        #refresh-button:hover {
+            background-color: #e5e7eb;
+            transform: translateY(-1px);
+        }
+        /* Mobile adjustment to ensure it doesn't overlap header too much */
+        @media (max-width: 600px) {
+            #refresh-button {
+                padding: 6px; /* Adjusted padding for mobile */
+                font-size: 1em; /* Adjusted font size for mobile */
+                top: 15px;
+                right: 15px;
+            }
+        }
 
 
-        /* --- Lesson Grouping Styles (UPDATED) --- */
-        .lesson-group {
-            margin-bottom: 20px; /* Reduced vertical spacing when closed */
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden; /* Important for the transition to work clean */
-        }
-        
-        .lesson-group-title {
-            /* Now acts as a clickable accordion header */
-            font-size: 1.2em;
-            font-weight: 700;
-            color: #3b82f6; 
-            margin: 0;
-            padding: 15px 20px;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #f1f7ff; /* Light blue background for header */
-            transition: background-color 0.2s;
-        }
-        
-        .lesson-group-title:hover {
-            background-color: #e3f0ff;
-        }
-        
-        .lesson-group-title .toggle-icon {
-            font-size: 1.5em;
-            transition: transform 0.3s ease-in-out;
-            margin-left: 10px;
-        }
+        /* --- Lesson Grouping Styles --- */
+        .lesson-group {
+            margin-bottom: 40px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .lesson-group-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #3b82f6; /* Blue heading */
+            margin-bottom: 20px;
+            text-align: left;
+            padding-left: 5px;
+        }
+        #lesson-content {
+            display: grid;
+            grid-template-columns: 1fr; /* Vertical stacking for mobile */
+            gap: 15px; 
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
 
-        /* --- Card Content Container (NEW) --- */
-        /* This is the container that will be toggled open/closed */
-        .lesson-group-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out; /* Smooth slide-down effect */
-            padding: 0 20px; /* Horizontal padding for content */
-            border-top: 1px solid transparent; /* Prevents visual jump */
-        }
+        /* --- Flip Card Structure --- */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 180px; 
+            perspective: 1200px; 
+            border-radius: 12px;
+        }
 
-        /* State when the group is OPEN */
-        .lesson-group.is-open .lesson-group-title .toggle-icon {
-            transform: rotate(90deg); /* Change icon to indicate open */
-        }
-        
-        .lesson-group.is-open .lesson-group-content {
-            max-height: 2000px; /* Large enough value to contain all cards */
-            padding: 15px 20px 20px; /* Add top/bottom padding when open */
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        /* The main card grid style */
-        #lesson-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s ease-in-out;
+            transform-style: preserve-3d;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Soft Inner Shadow */
+            cursor: pointer; /* Indicate the card is clickable */
+        }
 
-        /* --- Other Styles (Card Flip, Progress, etc. - Left mostly untouched) --- */
-        .flip-card {
-            background-color: transparent;
-            width: 100%;
-            height: 180px; 
-            perspective: 1200px; 
-            border-radius: 12px;
-        }
+        .card-item.is-flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
 
-        .flip-card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.8s ease-in-out;
-            transform-style: preserve-3d;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            cursor: pointer;
-        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            /* Adjust padding for progress indicator at bottom-left and button at bottom-right */
+            padding-bottom: 55px; 
+            justify-content: space-between; 
+            align-items: center;
+        }
 
-        .card-item.is-flipped .flip-card-inner {
-            transform: rotateY(180deg);
-        }
+        .flip-card-front {
+            background-color: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
 
-        .flip-card-front, .flip-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 12px;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 55px; 
-            justify-content: space-between; 
-            align-items: center;
-        }
+        .flip-card-back {
+            background-color: #00bcd4; /* Vibrant Teal/Cyan */
+            background: linear-gradient(45deg, #00bcd4, #007bff);
+            color: white;
+            transform: rotateY(180deg);
+            padding-bottom: 20px; /* Reset padding on back */
+        }
+        
+        /* --- Learned State Styling (New) --- */
+        .card-item.is-learned .flip-card-front {
+            background-color: #ecfdf5; /* Very light green background */
+            border: 2px solid #10b981; /* Green border */
+        }
 
-        .flip-card-front {
-            background-color: white;
-            color: #1f2937;
-            border: 1px solid #e5e7eb;
-        }
+        .card-item.is-learned .word-display {
+            color: #047857; /* Darker green text */
+            text-decoration: line-through; /* Indicates mastery */
+            opacity: 0.7;
+        }
+        
+        /* --- Card Content Styling --- */
+        .context-hint { 
+            font-size: 0.85em;
+            color: #6b7280;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
 
-        .flip-card-back {
-            background-color: #00bcd4;
-            background: linear-gradient(45deg, #00bcd4, #007bff);
-            color: white;
-            transform: rotateY(180deg);
-            padding-bottom: 20px;
-        }
-        
-        /* --- Learned State Styling --- */
-        .card-item.is-learned .flip-card-front {
-            background-color: #ecfdf5; 
-            border: 2px solid #10b981;
-        }
+        .word-display {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: #1f2937; 
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-        .card-item.is-learned .word-display {
-            color: #047857; 
-            text-decoration: line-through; 
-            opacity: 0.7;
-        }
-        
-        /* --- Card Content Styling --- */
-        .context-hint { 
-            font-size: 0.85em;
-            color: #6b7280;
-            font-style: italic;
-            margin-bottom: 5px;
-        }
+        .definition-text {
+            font-size: 1.1em;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 0;
+            color: white;
+            flex-grow: 1; 
+            display: flex;
+            align-items: center;
+        }
 
-        .word-display {
-            font-size: 1.8em;
-            font-weight: 800;
-            color: #1f2937; 
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* --- Progress Bar Styling (New) --- */
+        .card-progress {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            /* Set width to span almost the entire card, leaving space for the audio button */
+            width: calc(100% - 75px); 
+            text-align: left;
+        }
 
-        .definition-text {
-            font-size: 1.1em;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 0;
-            color: white;
-            flex-grow: 1; 
-            display: flex;
-            align-items: center;
-        }
+        .progress-status {
+            font-size: 0.75em;
+            color: #9ca3af; /* Light gray text */
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
 
-        /* --- Progress Bar Styling --- */
-        .card-progress {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            width: calc(100% - 75px); 
-            text-align: left;
-        }
+        .progress-bar {
+            height: 6px;
+            background-color: #e5e7eb; /* Background track */
+            border-radius: 3px;
+            overflow: hidden;
+        }
 
-        .progress-status {
-            font-size: 0.75em;
-            color: #9ca3af;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3b82f6; /* Blue fill */
+            transition: width 0.3s ease-out;
+        }
+        
+        .card-item.is-learned .progress-bar-fill {
+            background-color: #10b981; /* Solid green fill for learned */
+        }
+        
+        /* --- Buttons (Audio Only) --- */
+        .card-controls {
+            /* Position audio button absolutely in the bottom right */
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            
+            display: flex;
+            justify-content: flex-end; 
+            z-index: 10; 
+        }
+        
+        .audio-button {
+            border: none;
+            border-radius: 50%; 
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            height: 45px; 
+            width: 45px; 
+            box-sizing: border-box;
+            padding: 0;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            background-color: #10b981; /* Emerald Green */
+            color: white;
+        }
+        .audio-button:hover { 
+            background-color: #049568; 
+            transform: translateY(-1px); 
+        }
 
-        .progress-bar {
-            height: 6px;
-            background-color: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
+        .srs-actions {
+            display: none; /* Hide SRS button container */
+        }
 
-        .progress-bar-fill {
-            height: 100%;
-            background-color: #3b82f6;
-            transition: width 0.3s ease-out;
-        }
-        
-        .card-item.is-learned .progress-bar-fill {
-            background-color: #10b981;
-        }
-        
-        /* --- Buttons (Audio Only) --- */
-        .card-controls {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: flex-end; 
-            z-index: 10; 
-        }
-        
-        .audio-button {
-            border: none;
-            border-radius: 50%; 
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            height: 45px; 
-            width: 45px; 
-            box-sizing: border-box;
-            padding: 0;
-            font-size: 1.2em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #10b981;
-            color: white;
-        }
-        .audio-button:hover { 
-            background-color: #049568; 
-            transform: translateY(-1px); 
-        }
-
-        .srs-actions {
-            display: none;
-        }
-
-    </style>
+    </style>
 </head>
 <body>
 
 <div id="app">
-    <h1>Чакчак Англисӣ</h1>
-    <button id="refresh-button" title="Reload data from Google Sheet">↻</button>
+    <h1>Чакчак Англисӣ</h1>
+    <!-- UPDATED REFRESH BUTTON: Icon only -->
+    <button id="refresh-button" title="Reload data from Google Sheet">↻</button>
 
-    <div id="status">Loading data...</div>
-    
-    <div id="lesson-view-container">
-        </div>
+    <div id="status">Loading data...</div>
+    
+    <div id="lesson-view-container">
+        <!-- Content generated by JavaScript -->
+    </div>
 </div>
 
 <script>
-    // --- Configuration ---
-    const STORAGE_KEY = 'flashcard_view_counts';
-    const DATA_URL = '
+    // --- Configuration ---
+    const STORAGE_KEY = 'flashcard_view_counts'; // Key for permanent local storage
+    
+    // UPDATED URL: Using the new, working Apps Script deployment link
+    const DATA_URL = 'https://script.google.com/macros/s/AKfycbzNT5IjZqTCH8hIUdtNHxJIhELFvjDMpop7LIgI6Ub9kV09RYKhtEYdlIRVnPEye2gN/exec'; 
+    
+    const MAX_VIEWS = 100;
+
+    let words = [];
+    let viewCounts = {}; // Stores { wordKey: viewCount }
+
+    // --- Storage Functions ---
+
+    function loadViewCounts() {
+        const storedCounts = localStorage.getItem(STORAGE_KEY);
+        if (storedCounts) {
+            try {
+                viewCounts = JSON.parse(storedCounts);
+            } catch (e) {
+                console.error("Failed to parse view counts from localStorage:", e);
+                viewCounts = {};
+            }
+        }
+    }
+
+    function saveViewCounts() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(viewCounts));
+    }
+
+
+    // --- TTS & Rewards Function ---
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-GB';
+            utterance.rate = 0.6;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn('Text-to-Speech is not supported in this browser.');
+        }
+    }
+
+    function speakReward(message) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 0.8; // Faster speech for appraisal
+            utterance.pitch = 1.2; // Higher pitch
+            utterance.volume = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // --- Confetti Effect Function (New) ---
+
+    function launchConfetti(originElement) {
+        const particleCount = 40;
+        const colors = ["#ffc700", "#ff0000", "#2e4a6e", "#00d4ff", "#10b981", "#ff69b4"];
+        const container = document.body;
+        
+        // Get the position of the card to launch confetti from its center
+        const rect = originElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            
+            // Inline styles for the particle
+            p.style.position = 'fixed'; // Use fixed position to break out of card bounds
+            p.style.zIndex = '9999';
+            p.style.width = `${Math.random() * 6 + 4}px`; // 4px to 10px
+            p.style.height = p.style.width;
+            p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'; // Mix of shapes
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Start near the card's center
+            p.style.left = `${centerX + (Math.random() - 0.5) * 50}px`;
+            p.style.top = `${centerY + (Math.random() - 0.5) * 50}px`;
+
+            // Random initial direction and speed
+            const angle = Math.random() * 360;
+            const velocity = Math.random() * 10 + 10; // 10 to 20 (velocity units)
+            const rotationSpeed = Math.random() * 360 * (Math.random() > 0.5 ? 1 : -1);
+
+            let time = 0;
+            const duration = 2000;
+            const gravity = 0.2; // Simulate gravity (velocity units/frame)
+
+            let vx = velocity * Math.cos(angle * Math.PI / 180);
+            let vy = velocity * Math.sin(angle * Math.PI / 180);
+            
+            const animateParticle = () => {
+                const tDelta = 1; // Time step for calculation
+                time += tDelta;
+                
+                // Update velocity with decay and gravity
+                vx *= 0.99;
+                vy += gravity; 
+
+                // Update position
+                const currentLeft = parseFloat(p.style.left) || 0;
+                const currentTop = parseFloat(p.style.top) || 0;
+
+                p.style.left = `${currentLeft + vx}px`;
+                p.style.top = `${currentTop + vy}px`;
+                p.style.transform = `rotate(${time * rotationSpeed / 10}deg)`;
+                p.style.opacity = `${1 - (time / (duration / 16))}`; // Fade out over time
+
+                if (time < duration / 16 && parseFloat(p.style.top) < window.innerHeight) {
+                    requestAnimationFrame(animateParticle);
+                } else {
+                    p.remove();
+                }
+            };
+            container.appendChild(p);
+            requestAnimationFrame(animateParticle);
+        }
+    }
+
+    // --- Status Update Function ---
+    function updateStatusDisplay() {
+        const totalCards = document.querySelectorAll('.card-item').length;
+        document.getElementById('status').textContent = `Total Words Loaded: ${words.length} | Cards Displayed: ${totalCards}`;
+    }
+
+
+    // --- Core Logic ---
+
+    function groupWordsByLesson(wordList) {
+        const grouped = {};
+        wordList.forEach(wordObj => {
+            const lesson = wordObj.lesson || 'Unsorted Words'; 
+            if (!grouped[lesson]) {
+                grouped[lesson] = [];
+            }
+            grouped[lesson].push(wordObj);
+        });
+        return grouped;
+    }
+    
+    function handleFlipToggle(e) {
+        const cardItem = e.currentTarget.closest('.card-item');
+        if (!cardItem) return;
+
+        const wordKey = cardItem.getAttribute('data-word');
+        
+        // Check if the card is flipping from front to back (revealing definition)
+        const isFlippingToBack = !cardItem.classList.contains('is-flipped');
+        
+        // Toggle the flip class
+        cardItem.classList.toggle('is-flipped');
+        
+        // Cancel any ongoing speech
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+        }
+
+        if (isFlippingToBack) {
+            // --- PROGRESS TRACKING LOGIC ---
+            const oldViewCount = viewCounts[wordKey] || 0;
+            const newViewCount = oldViewCount + 1;
+            viewCounts[wordKey] = newViewCount;
+            saveViewCounts();
+
+            const progressDisplay = cardItem.querySelector('.progress-status');
+            const progressBarFill = cardItem.querySelector('.progress-bar-fill');
+            const progressPercent = Math.min(100, Math.round((newViewCount / MAX_VIEWS) * 100));
+
+            // Update DOM immediately
+            if (progressDisplay) {
+                progressDisplay.textContent = `Views: ${newViewCount}/${MAX_VIEWS}`;
+            }
+            if (progressBarFill) {
+                progressBarFill.style.width = `${progressPercent}%;`;
+            }
+
+            // --- REWARD LOGIC (Confetti on every 10 views) ---
+            if (newViewCount > 0 && newViewCount % 10 === 0 && newViewCount <= MAX_VIEWS) {
+                const cardInner = cardItem.querySelector('.flip-card-inner');
+                launchConfetti(cardInner);
+            }
+            
+            // Handle Learned state and specific TTS rewards
+            if (newViewCount >= MAX_VIEWS && oldViewCount < MAX_VIEWS) {
+                cardItem.classList.add('is-learned');
+                speakReward("Excellent! Word mastered!");
+            } else if (newViewCount === 10) {
+                speakReward("Nice start, 10 views!");
+            } else if (newViewCount === 50) {
+                speakReward("Halfway there! Keep going!");
+            }
+        }
+    }
+
+
+    function renderLessonView(groupedWords) {
+        const container = document.getElementById('lesson-view-container');
+        container.innerHTML = '';
+
+        for (const lesson in groupedWords) {
+            const lessonGroupDiv = document.createElement('div');
+            lessonGroupDiv.className = 'lesson-group';
+            
+            const title = document.createElement('h2');
+            title.className = 'lesson-group-title';
+            title.textContent = lesson;
+            lessonGroupDiv.appendChild(title);
+            
+            const cardGrid = document.createElement('ul');
+            cardGrid.id = 'lesson-content';
+            
+            groupedWords[lesson].forEach(wordObj => {
+                const wordKey = wordObj.word;
+                const currentViewCount = viewCounts[wordKey] || 0;
+                const progressPercent = Math.min(100, Math.round((currentViewCount / MAX_VIEWS) * 100));
+                
+                const cardItem = document.createElement('li');
+                cardItem.className = 'card-item'; 
+                cardItem.setAttribute('data-word', wordKey);
+                
+                // Set 'is-learned' class on load if it has reached the max views
+                if (currentViewCount >= MAX_VIEWS) {
+                    cardItem.classList.add('is-learned');
+                }
+
+                // Populate the card structure
+                cardItem.innerHTML = `
+                    <div class="flip-card">
+                        <div class="flip-card-inner">
+                            
+                            <!-- Front Side: Context (New), Word, Progress, and controls -->
+                            <div class="flip-card-front">
+                                <div class="context-hint">${wordObj.context}</div>
+                                <div class="word-display">${wordObj.word}</div>
+                                
+                                <!-- Progress Indicator -->
+                                <div class="card-progress">
+                                    <div class="progress-status">Views: ${currentViewCount}/${MAX_VIEWS}</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill" style="width: ${progressPercent}%;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Control -->
+                                <div class="card-controls">
+                                    <button class="audio-button" title="Speak Word">▶</button>
+                                </div>
+                            </div>
+
+                            <!-- Back Side: Definition only -->
+                            <div class="flip-card-back">
+                                <div class="definition-text">${wordObj.definition}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // --- Event Listeners ---
+                
+                // 1. Card Flip on general click (Attached to the inner container for proper event handling)
+                cardItem.querySelector('.flip-card-inner').addEventListener('click', handleFlipToggle);
+                
+                // 2. Audio button click (Must stop propagation so the card doesn't flip when audio is clicked)
+                cardItem.querySelector('.audio-button').addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    speak(wordObj.word);
+                });
+                
+                cardGrid.appendChild(cardItem);
+            });
+            
+            lessonGroupDiv.appendChild(cardGrid);
+            container.appendChild(lessonGroupDiv);
+        }
+        
+        updateStatusDisplay();
+    }
+
+
+    // --- Data Fetching and Initialization ---
+
+    async function fetchSheetData() {
+        if (DATA_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_GOES_HERE') {
+            document.getElementById('status').textContent = "Configuration Error: Please replace 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_GOES_HERE' with your actual Google Apps Script Web App URL.";
+            console.error('CRITICAL Configuration Error: DATA_URL has not been set to the Google Apps Script Web App URL.');
+            return; 
+        }
+
+        try {
+            document.getElementById('status').textContent = 'Fetching flashcard data... (Using Apps Script Proxy)';
+            console.log("Attempting to fetch data from Apps Script URL:", DATA_URL);
+            
+            const response = await fetch(DATA_URL);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP Error ${response.status}: Failed to load data. Please ensure your Apps Script is deployed as a Web App (Execute as: Me, Who has access: Anyone) AND that you have saved a new version after the code fix.`);
+            }
+            
+            const csvText = await response.text();
+            
+            console.log("--- Raw Data Received (Success) ---");
+
+            // CSV parsing: Col 1=Lesson, Col 2=Context, Col 3=Word, Col 4+=Definition
+            words = csvText.split('\n')
+                .slice(1) // Skip header row
+                .filter(line => line.trim() !== '')
+                .map(line => {
+                    // This regex attempts to split by comma while ignoring commas inside double quotes.
+                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+                    
+                    // Simple trim and removal of external quotes
+                    const clean = (str) => (str ? str.trim().replace(/^"|"$/g, '') : '');
+
+                    const lesson = clean(parts[0]); 
+                    const context = clean(parts[1]);
+                    const word = clean(parts[2]); 
+                    const definition = clean(parts.slice(3).join(',')); // Definition can span multiple columns if it has commas
+                    
+                    return { 
+                        word: word, 
+                        definition: definition,
+                        lesson: lesson,
+                        context: context 
+                    };
+                })
+                .filter(item => item.word && item.definition); 
+
+            if (words.length > 0) {
+                console.log(`Successfully parsed ${words.length} valid flashcards.`);
+                document.getElementById('status').textContent = `Successfully loaded ${words.length} cards!`;
+            } else {
+                console.warn("Parsing resulted in 0 valid flashcards. Check your sheet content and column order (Lesson, Context, Word, Definition).");
+                document.getElementById('status').textContent = "Data loaded, but 0 valid flashcards found. Check sheet structure (Lesson, Context, Word, Definition).";
+            }
+
+            initialize(); 
+
+        } catch (error) {
+            console.error('CRITICAL Error fetching or parsing Google Sheet:', error);
+            document.getElementById('status').textContent = `Error loading data: ${error.message}. Please check the console for troubleshooting steps.`;
+        }
+    }
+
+    function initialize() {
+        loadViewCounts();
+        const groupedWords = groupWordsByLesson(words);
+        renderLessonView(groupedWords);
+    }
+
+    // Start the application by fetching data
+    fetchSheetData(); 
+    
+    // --- Event Listener for Refresh Button ---
+    const refreshButton = document.getElementById('refresh-button');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', () => {
+            // Re-fetch and re-render the data
+            words = []; 
+            fetchSheetData();
+        });
+    }
+</script>
+</body>
+</html>
