@@ -1,356 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Чакчак Англисӣ – Flashcards</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tajik Flashcards</title>
   <style>
-    /* ---------- GLOBAL LAYOUT ---------- */
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: "Inter", system-ui, sans-serif;
       background-color: #f8fafc;
       color: #1f2937;
       margin: 0;
-      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-    }
-    #app {
-      background: white;
-      border-radius: 16px;
-      padding: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 650px;
-      position: relative;
-      text-align: center;
+      padding: 20px;
     }
     h1 {
-      color: #007bff;
-      margin-bottom: 5px;
+      color: #2563eb;
       font-weight: 800;
+    }
+    #container {
+      display: grid;
+      gap: 20px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.6s;
+      cursor: pointer;
+      position: relative;
+      height: 160px;
+      perspective: 1000px;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card-front {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
+    .card-back {
+      background: linear-gradient(45deg, #2563eb, #3b82f6);
+      color: white;
+      transform: rotateY(180deg);
     }
     #status {
       color: #6b7280;
+      margin: 10px 0;
+    }
+    #refresh {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #refresh:hover {
+      background-color: #2563eb;
+    }
+    .play-btn:hover { background-color: #059669; }
+
+    .lesson-group {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       margin-bottom: 20px;
     }
-
-    /* ---------- REFRESH BUTTON ---------- */
-    #refresh-button {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      border: 1px solid #d1d5db;
-      background-color: #f3f4f6;
-      color: #3b82f6;
-      border-radius: 8px;
-      font-size: 1.2em;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-    #refresh-button:hover {
-      background-color: #e5e7eb;
-    }
-
-    /* ---------- LESSON SECTIONS ---------- */
-    .lesson-group {
-      margin-bottom: 40px;
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 10px;
-    }
-    .lesson-group-title {
-      text-align: left;
-      color: #3b82f6;
-      font-weight: 700;
-      font-size: 1.3em;
-      margin-bottom: 15px;
-    }
-
-    /* ---------- CARD STYLES ---------- */
-    ul {
+    .lesson-group summary {
       list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 15px;
     }
-    .card-item {
-      perspective: 1200px;
+    .lesson-group summary::-webkit-details-marker {
+      display: none;
     }
-    .flip-card-inner {
-      position: relative;
-      width: 100%;
-      height: 180px;
-      transition: transform 0.8s ease;
-      transform-style: preserve-3d;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    .lesson-group summary::before {
+      content: "▶ ";
+      color: #2563eb;
+      transition: transform 0.2s ease;
+    }
+    .lesson-group[open] summary::before {
+      content: "▼ ";
+    }
+    .play-btn {
+      background: #10b981;
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 0.8em;
       cursor: pointer;
+      margin-right: 10px;
     }
-    .card-item.is-flipped .flip-card-inner {
-      transform: rotateY(180deg);
+    .play-btn:hover {
+      background-color: #059669;
     }
-    .flip-card-front, .flip-card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      border-radius: 12px;
+    .word-row {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-    }
-    .flip-card-front {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-    }
-    .flip-card-back {
-      background: linear-gradient(45deg, #00bcd4, #007bff);
-      color: white;
-      transform: rotateY(180deg);
-    }
-
-    .context-hint {
-      font-size: 0.8em;
-      color: #6b7280;
-      margin-bottom: 8px;
-      font-style: italic;
-    }
-    .word-display {
       font-size: 1.8em;
-      font-weight: 800;
+      font-weight: bold;
     }
-    .definition-text {
-      font-size: 1.1em;
-    }
-
-    /* ---------- PROGRESS BAR ---------- */
-    .card-progress {
-      position: absolute;
-      bottom: 15px;
-      left: 15px;
-      right: 70px;
-    }
-    .progress-status {
-      font-size: 0.75em;
-      color: #9ca3af;
-      margin-bottom: 3px;
-    }
-    .progress-bar {
+    #loading-bar-container {
+      width: 100%;
+      max-width: 600px;
       height: 6px;
-      background-color: #e5e7eb;
+      background: #e5e7eb;
       border-radius: 3px;
       overflow: hidden;
+      margin-top: 10px;
+      display: none;
     }
-    .progress-bar-fill {
-      height: 100%;
-      background-color: #3b82f6;
+    #loading-bar-fill {
       width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    /* ---------- AUDIO BUTTON ---------- */
-    .card-controls {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-    }
-    .audio-button {
-      border: none;
-      border-radius: 50%;
-      width: 45px;
-      height: 45px;
-      background-color: #10b981;
-      color: white;
-      font-size: 1.2em;
-      cursor: pointer;
-    }
-    .audio-button:hover {
-      background-color: #049568;
-    }
-
-    /* ---------- LEARNED STATE ---------- */
-    .card-item.is-learned .flip-card-front {
-      background-color: #ecfdf5;
-      border: 2px solid #10b981;
-    }
-    .card-item.is-learned .word-display {
-      color: #047857;
-      text-decoration: line-through;
+      height: 100%;
+      background: #3b82f6;
+      transition: width 0.2s ease;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <h1>Чакчак Англисӣ</h1>
-    <button id="refresh-button">↻</button>
-    <div id="status">Loading data...</div>
-    <div id="lesson-view-container"></div>
+  <h1>Чакчак Flashcards</h1>
+  <button id="refresh">Reload Data</button>
+  <div id="status"></div>
+  <div id="loading-bar-container">
+    <div id="loading-bar-fill"></div>
   </div>
+  <div id="container"></div>
 
   <script>
-    const STORAGE_KEY = 'flashcard_view_counts';
     const DATA_URL = 'https://script.google.com/macros/s/AKfycbzNT5IjZqTCH8hIUdtNHxJIhELFvjDMpop7LIgI6Ub9kV09RYKhtEYdlIRVnPEye2gN/exec';
-    const MAX_VIEWS = 100;
+    const container = document.getElementById('container');
+    const status = document.getElementById('status');
 
-    let words = [];
-    let viewCounts = {};
+    const STORAGE_KEY = 'flashcard_progress';
+    let progress = {};
 
-    function loadViewCounts() {
+    function loadProgress() {
       try {
-        viewCounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
       } catch {
-        viewCounts = {};
+        progress = {};
       }
     }
-    function saveViewCounts() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(viewCounts));
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     }
 
-    function speak(text) {
+    function speakEnglish(text) {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'en-GB';
-        u.rate = 0.7;
-        window.speechSynthesis.speak(u);
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-GB';
+        utterance.rate = 0.7;
+        utterance.pitch = 1.1;
+        window.speechSynthesis.speak(utterance);
       }
     }
 
-    function speakReward(msg) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(msg);
-        u.rate = 0.8;
-        u.pitch = 1.2;
-        u.volume = 0.8;
-        window.speechSynthesis.speak(u);
-      }
-    }
+    async function fetchFlashcards() {
+      const loadingBarContainer = document.getElementById('loading-bar-container');
+      const loadingBarFill = document.getElementById('loading-bar-fill');
+      loadingBarContainer.style.display = 'block';
+      loadingBarFill.style.width = '0%';
 
-    function updateStatusDisplay() {
-      document.getElementById('status').textContent =
-        `Total Words: ${words.length}`;
-    }
-
-    function groupWordsByLesson(list) {
-      const grouped = {};
-      for (const item of list) {
-        const lesson = item.lesson || 'Unsorted';
-        if (!grouped[lesson]) grouped[lesson] = [];
-        grouped[lesson].push(item);
-      }
-      return grouped;
-    }
-
-    function handleFlip(e) {
-      const card = e.currentTarget.closest('.card-item');
-      const wordKey = card.dataset.word;
-      card.classList.toggle('is-flipped');
-
-      if (card.classList.contains('is-flipped')) {
-        const old = viewCounts[wordKey] || 0;
-        const now = old + 1;
-        viewCounts[wordKey] = now;
-        saveViewCounts();
-
-        const percent = Math.min(100, Math.round((now / MAX_VIEWS) * 100));
-        card.querySelector('.progress-status').textContent = `Views: ${now}/${MAX_VIEWS}`;
-        card.querySelector('.progress-bar-fill').style.width = percent + '%';
-
-        if (now >= MAX_VIEWS && old < MAX_VIEWS) {
-          card.classList.add('is-learned');
-          speakReward("Excellent! Word mastered!");
-        } else if (now === 10) {
-          speakReward("Nice start, 10 views!");
-        } else if (now === 50) {
-          speakReward("Halfway there! Keep going!");
+      let progressValue = 0;
+      const interval = setInterval(() => {
+        if (progressValue < 90) {
+          progressValue += 10;
+          loadingBarFill.style.width = progressValue + '%';
         }
-      }
-    }
+      }, 100);
 
-    function renderLessons(grouped) {
-      const container = document.getElementById('lesson-view-container');
+      status.textContent = '';
       container.innerHTML = '';
-      for (const lesson in grouped) {
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'lesson-group';
-
-        const title = document.createElement('h2');
-        title.className = 'lesson-group-title';
-        title.textContent = lesson;
-        groupDiv.appendChild(title);
-
-        const list = document.createElement('ul');
-        for (const w of grouped[lesson]) {
-          const current = viewCounts[w.word] || 0;
-          const percent = Math.min(100, Math.round((current / MAX_VIEWS) * 100));
-
-          const li = document.createElement('li');
-          li.className = 'card-item';
-          li.dataset.word = w.word;
-          if (current >= MAX_VIEWS) li.classList.add('is-learned');
-
-          li.innerHTML = `
-            <div class="flip-card-inner">
-              <div class="flip-card-front">
-                <div class="context-hint">${w.context}</div>
-                <div class="word-display">${w.word}</div>
-                <div class="card-progress">
-                  <div class="progress-status">Views: ${current}/${MAX_VIEWS}</div>
-                  <div class="progress-bar"><div class="progress-bar-fill" style="width:${percent}%"></div></div>
-                </div>
-                <div class="card-controls">
-                  <button class="audio-button">▶</button>
-                </div>
-              </div>
-              <div class="flip-card-back">
-                <div class="definition-text">${w.definition}</div>
-              </div>
-            </div>
-          `;
-          li.querySelector('.flip-card-inner').addEventListener('click', handleFlip);
-          li.querySelector('.audio-button').addEventListener('click', e => {
-            e.stopPropagation();
-            speak(w.word);
-          });
-          list.appendChild(li);
-        }
-        groupDiv.appendChild(list);
-        container.appendChild(groupDiv);
-      }
-      updateStatusDisplay();
-    }
-
-    async function fetchSheetData() {
       try {
-        document.getElementById('status').textContent = 'Loading data...';
-        const response = await fetch(DATA_URL);
-        const csv = await response.text();
-        words = csv.split('\n').slice(1).filter(l => l.trim() !== '').map(line => {
-          const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-          const clean = s => s ? s.trim().replace(/^"|"$/g, '') : '';
+        const res = await fetch(DATA_URL);
+        const text = await res.text();
+        const rows = text.split('\n').slice(1).filter(r => r.trim() !== '');
+        const data = rows.map(row => {
+          const parts = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+          const clean = s => s.replace(/^"|"$/g, '').trim();
           return {
             lesson: clean(parts[0]),
             context: clean(parts[1]),
             word: clean(parts[2]),
             definition: clean(parts.slice(3).join(',')),
           };
-        }).filter(x => x.word && x.definition);
-        loadViewCounts();
-        renderLessons(groupWordsByLesson(words));
+        });
+
+        renderCards(data);
+        status.textContent = '';
       } catch (err) {
         console.error(err);
-        document.getElementById('status').textContent = 'Error loading data.';
+        status.textContent = 'Failed to load data.';
+      }
+      clearInterval(interval);
+      loadingBarFill.style.width = '100%';
+      setTimeout(() => { loadingBarContainer.style.display = 'none'; }, 300);
+    }
+
+    function renderCards(data) {
+      loadProgress();
+      container.innerHTML = '';
+
+      const grouped = {};
+      data.forEach(item => {
+        if (!grouped[item.lesson]) grouped[item.lesson] = [];
+        grouped[item.lesson].push(item);
+      });
+
+      for (const lesson in grouped) {
+        const lessonWords = grouped[lesson];
+        const total = lessonWords.length;
+        const completed = lessonWords.filter(w => (progress[w.word] || 0) >= 1).length;
+        const percent = Math.round((completed / total) * 100);
+
+        const details = document.createElement('details');
+        details.className = 'lesson-group';
+        const summary = document.createElement('summary');
+        summary.innerHTML = `
+          ${lesson}
+          <div style="flex:1; margin-left:10px; height:6px; background:#e5e7eb; border-radius:3px; display:inline-block; vertical-align:middle;">
+            <div style="width:${percent}%; height:100%; background:#3b82f6; border-radius:3px;"></div>
+          </div>
+        `;
+        summary.style.cursor = 'pointer';
+        summary.style.fontWeight = 'bold';
+        summary.style.fontSize = '1.2em';
+        summary.style.margin = '10px 0';
+        summary.style.color = '#2563eb';
+        summary.style.display = 'flex';
+        summary.style.alignItems = 'center';
+        details.appendChild(summary);
+
+        const listContainer = document.createElement('div');
+        grouped[lesson].forEach(item => {
+          let views = progress[item.word] || 0;
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="card-inner">
+              <div class="card-front">
+                <div>
+                  <div style="font-size:0.8em;color:#6b7280;">${item.context}</div>
+                  <div class="word-row">
+                    <button class="play-btn">▶</button>
+                    <span>${item.word}</span>
+                  </div>
+                  <div class="progress-container" style="margin-top:10px;">
+                    <div style="font-size:0.8em;color:#9ca3af;">Viewed ${views} times</div>
+                    <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+                      <div class="progress-fill" style="width:${Math.min(100, views)}%;height:100%;background:#3b82f6;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-back">
+                <div>${item.definition}</div>
+              </div>
+            </div>
+          `;
+          card.querySelector('.play-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakEnglish(item.word);
+          });
+          card.addEventListener('click', () => {
+            card.classList.toggle('flipped');
+            if (card.classList.contains('flipped')) {
+              progress[item.word] = (progress[item.word] || 0) + 1;
+              saveProgress();
+              const fill = card.querySelector('.progress-fill');
+              const label = card.querySelector('.progress-container div');
+              label.textContent = `Viewed ${progress[item.word]} times`;
+              fill.style.width = Math.min(100, progress[item.word]) + '%';
+            }
+          });
+          listContainer.appendChild(card);
+        });
+        details.appendChild(listContainer);
+        container.appendChild(details);
       }
     }
 
-    document.getElementById('refresh-button').addEventListener('click', fetchSheetData);
-    fetchSheetData();
+    document.getElementById('refresh').addEventListener('click', fetchFlashcards);
+    fetchFlashcards();
   </script>
 </body>
 </html>
