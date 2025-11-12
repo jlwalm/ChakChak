@@ -125,7 +125,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8em;
+      font-size: 1.2em;
       font-weight: bold;
     }
     #loading-bar-container {
@@ -263,23 +263,20 @@
 
         const listContainer = document.createElement('div');
         grouped[lesson].forEach(item => {
-          let views = progress[item.word] || 0;
+          // Restored per-card progress bar and views display
           const card = document.createElement('div');
           card.className = 'card';
           card.innerHTML = `
             <div class="card-inner">
               <div class="card-front">
-                <div>
-                  <div style="font-size:0.8em;color:#6b7280;">${item.context}</div>
-                  <div class="word-row">
-                    <button class="play-btn">▶</button>
-                    <span>${item.word}</span>
-                  </div>
-                  <div class="progress-container" style="margin-top:10px;">
-                    <div style="font-size:0.8em;color:#9ca3af;">Viewed ${views} times</div>
-                    <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
-                      <div class="progress-fill" style="width:${Math.min(100, views)}%;height:100%;background:#3b82f6;"></div>
-                    </div>
+                <div class="word-row">
+                  <button class="play-btn">▶</button>
+                  <span>${item.word}</span>
+                </div>
+                <div class="progress-container" style="margin-top:10px;">
+                  <div style="font-size:0.8em;color:#9ca3af;">Viewed ${progress[item.word] || 0} times</div>
+                  <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+                    <div class="progress-fill" style="width:${Math.min(100, progress[item.word] || 0)}%;height:100%;background:#3b82f6;"></div>
                   </div>
                 </div>
               </div>
